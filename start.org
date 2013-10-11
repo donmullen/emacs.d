@@ -1,6 +1,6 @@
-#+TITLE: Emacs 24 configuration for Clinton Dreisbach
-#+AUTHOR: Clinton Dreisbach
-#+EMAIL: clinton@dreisbach.us
+#+TITLE: Emacs 24 configuration for Don Mullen
+#+AUTHOR: Clinton Dreisbach, with modifications by Don Mullen
+#+EMAIL:  donmullen@gmail.com
 #+OPTIONS: toc:2 num:nil
 
 * Introduction
@@ -23,8 +23,8 @@
    environment. I prefer to be explicit about it.
 
 #+BEGIN_SRC emacs-lisp
-  (setq user-full-name "Clinton N. Dreisbach")
-  (setq user-mail-address "clinton@dreisbach.us")
+  (setq user-full-name "Don Mullen")
+  (setq user-mail-address "donmullen@gmail.com")
 #+END_SRC
 
 * Must-Have Configuration
@@ -180,7 +180,7 @@
   (defvar cnd/packages '(adoc-mode
                          ag
                          auto-complete
-                         autopair
+                         ;; autopair
                          clojure-mode
                          coffee-mode
                          cperl-mode
@@ -190,7 +190,6 @@
                          flymake
                          flymake-cursor
                          flymake-python-pyflakes
-                         go-mode
                          gist
                          haml-mode
                          htmlize
@@ -204,7 +203,6 @@
                          mustache-mode
                          nrepl
                          org
-                         paredit
                          phoenix-dark-mono-theme
                          phoenix-dark-pink-theme
                          pony-mode
@@ -214,7 +212,9 @@
                          rainbow-delimiters
                          sass-mode
                          scss-mode
+                         smartparens
                          smex
+                         undo-tree
                          yaml-mode)
     "Packages I always want installed.")
 #+END_SRC
@@ -355,6 +355,73 @@ I want to be able to use [[http://ditaa.sourceforge.net/][ditaa]] and Clojure in
                   :value))))
 #+END_SRC
 
+** Undo-tree
+#+BEGIN_SRC emacs-lisp
+  (global-undo-tree-mode)
+#+END_SRC
+** SmartParens
+
+From :  https://github.com/ronert/.emacs.d/blob/master/init-smartparens.el
+Option to look at : author's default configuration :  https://github.com/Fuco1/smartparens/wiki/Example-configuration
+
+#+BEGIN_SRC emacs-lisp
+  
+  (require 'smartparens-config)
+  (smartparens-global-mode t)
+  
+  ;; highlights matching pairs
+  (show-smartparens-global-mode t)
+  
+  ;; do not autoinsert ' pair if the point is preceeded by word.  This
+  ;; will handle the situation when ' is used as a contraction symbol in
+  ;; natural language.  Nil for second argument means to keep the
+  ;; original definition of closing pair.
+  (sp-pair "'" nil :unless '(sp-point-after-word-p))
+  
+  ;; emacs is lisp hacking enviroment, so we set up some most common
+  ;; lisp modes too
+  (sp-with-modes '(
+                   emacs-lisp-mode
+                   inferior-emacs-lisp-mode
+                   lisp-interaction-mode
+                   scheme-mode
+                   lisp-mode
+                   eshell-mode
+                   slime-repl-mode
+                   clojure-mode
+                   common-lisp-mode
+                   )
+    ;; disable ', it's the quote character!
+    (sp-local-pair "'" nil :actions nil)
+    ;; also only use the pseudo-quote inside strings where it serve as
+    ;; hyperlink.
+    (sp-local-pair "`" nil :when '(sp-in-string-p)))
+  
+  ;; NOTE: Normally, `sp-local-pair' accepts list of modes (or a single
+  ;; mode) as a first argument.  The macro `sp-with-modes' adds this
+  ;; automatically.  If you want to call sp-local-pair outside this
+  ;; macro, you MUST supply the major mode argument.
+  
+  ;; markdown based modes
+  (sp-with-modes '(
+                   markdown-mode
+                   gfm-mode
+                   rst-mode
+                   )
+    ;; overload the `' pair with ``, which is used for inline
+    ;; code in markdown
+    (sp-local-pair "`" "`"))
+  
+  ;; org-mode
+  (sp-with-modes '( org-mode ))
+  
+  ;; Shells
+  (add-hook 'inferior-python-mode-hook (lambda () (smartparens-mode 1)))
+  
+  ;; html modes
+  (sp-local-tag '(sgml-mode html-mode) "<" "<_>" "</_>" :transform 'sp-match-sgml-tags)
+  
+#+END_SRC
 * GUI Settings
   Emacs' default GUI settings are not great and cause it to not
   resemble a modern application. Luckily, they are very
@@ -548,7 +615,7 @@ smart quotes. I use [[http://kevinburke.bitbucket.org/markdowncss/][markdown.css
    get auto-loaded, so I have to require it explicitly.
 
 #+BEGIN_SRC emacs-lisp
-  (require 'autopair)
+  ;; (require 'autopair)
 #+END_SRC
 
 ** C
@@ -561,7 +628,7 @@ smart quotes. I use [[http://kevinburke.bitbucket.org/markdowncss/][markdown.css
 ** Clojure
    I want Emacs to open up ClojureScript files with Clojure syntax.
 
-   I want paredit-mode when I am editing Clojure files as well as
+   I want smartparens when I am editing Clojure files as well as
    rainbow delimiters.
 
    Lastly, =nrepl= is the Emacs client for the Clojure REPL, and I
@@ -571,9 +638,10 @@ smart quotes. I use [[http://kevinburke.bitbucket.org/markdowncss/][markdown.css
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.cljs$" . clojure-mode))
   
-  (add-hook 'clojure-mode-hook 'paredit-mode)
+  (add-hook 'clojure-mode-hook 'smartparens-strict-mode)
   (add-hook 'clojure-mode-hook 'rainbow-delimiters-mode)
-  (add-hook 'nrepl-mode-hook 'paredit-mode)
+  (add-hook 'nrepl-repl-mode-hook 'smartparens-strict-mode)
+  (add-hook 'nrepl-mode-hook 'smartparens-strict-mode)
   (add-hook 'nrepl-mode-hook 'rainbow-delimiters-mode)
   
   (add-hook 'nrepl-interaction-mode-hook 'nrepl-turn-on-eldoc-mode)
@@ -602,35 +670,6 @@ us to go to definition with M-. and back again with M-,.
   (eval-after-load 'elisp-slime-nav '(diminish 'elisp-slime-nav-mode))
 #+end_src
 
-** Go
-   Go is a rad systems language from Google. One thing I like about it
-   is that it has exquisite tools built for it. In particular, it has
-   =gofmt=, which formats the code according to Google's specs. I am
-   adding a hook to =go-mode= to turn on =autopair-mode= and to run
-   =gofmt= before saving a file.
-
-   I am also adding =go-autocomplete=, which will allow me to complete
-   on methods from my own code and the Go libraries I am using.
-
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'go-mode-hook
-            (lambda ()
-              (autopair-mode)
-              (add-hook 'before-save-hook 'gofmt-before-save nil t)))
-
-  (require 'go-autocomplete)
-  (require 'auto-complete-config)
-#+END_SRC
-
-** Hy
-   Hy is a Lisp implemented on top of Python. It is rad.
-
-#+BEGIN_SRC emacs-lisp
-  (require 'hy-mode)
-  (add-hook 'hy-mode-hook 'paredit-mode)
-  (add-hook 'hy-mode-hook 'rainbow-delimiters-mode)
-#+END_SRC
-
 ** Javascript
    JS has its own indentation rules, so I have to set them with a
    separate variable.
@@ -638,41 +677,6 @@ us to go to definition with M-. and back again with M-,.
 #+begin_src emacs-lisp
   (setq js-indent-level 2)
 #+end_src
-
-** Lisp
-   Lisp is the most awesome family of programming languages ever. When
-   I'm using Lisp, I want ultimate power, so I turn on paredit, which
-   gives me amazing abilities to move code around inside
-   S-expressions.
-
-   This section is a good example of how to extend Emacs with keymaps
-   and minor-modes.
-
-#+BEGIN_SRC emacs-lisp
-  ;; lisp.el
-  ;; (setq lisp-modes '(lisp-mode
-  ;;                    emacs-lisp-mode
-  ;;                    common-lisp-mode
-  ;;                    scheme-mode
-  ;;                    clojure-mode))
-  ;; 
-  ;; (defvar lisp-power-map (make-keymap))
-  ;; (define-minor-mode lisp-power-mode "Fix keybindings; add power."
-  ;;   :lighter " (power)"
-  ;;   :keymap lisp-power-map
-  ;;   (paredit-mode t))
-  ;; (diminish 'lisp-power-mode)
-  ;; (define-key lisp-power-map [delete] 'paredit-forward-delete)
-  ;; (define-key lisp-power-map [backspace] 'paredit-backward-delete)
-  ;; 
-  ;; (defun cnd/engage-lisp-power ()
-  ;;   (lisp-power-mode t))
-  ;; 
-  ;; (dolist (mode lisp-modes)
-  ;;   (add-hook (intern (format "%s-hook" mode))
-  ;;             #'cnd/engage-lisp-power))
-  
-#+END_SRC
 
 ** Python
 I have customized pychecker to run my own version, which runs
@@ -714,7 +718,7 @@ I should figure out.
 #+BEGIN_SRC emacs-lisp
   (add-hook 'ruby-mode-hook
             (lambda ()
-              (autopair-mode)
+              ;; (autopair-mode)
               (add-hook 'before-save-hook 'whitespace-cleanup nil t)
               (define-key ruby-mode-map "{" 'self-insert-command)
               (define-key ruby-mode-map "}" 'self-insert-command)
@@ -724,7 +728,7 @@ I should figure out.
 ** Scheme
 
 #+BEGIN_SRC emacs-lisp
-  (add-hook 'scheme-mode-hook 'paredit-mode)
+  (add-hook 'scheme-mode-hook 'smartparens-strict-mode)
   (add-hook 'scheme-mode-hook 'rainbow-delimiters-mode)
   
   ;; From chicken scheme wiki
@@ -814,6 +818,11 @@ I should figure out.
   (global-set-key (kbd "C-+") 'cnd/increase-font-size)
   (global-set-key (kbd "C-=") 'cnd/increase-font-size)
   (global-set-key (kbd "C--") 'cnd/decrease-font-size)
+
+  ;; undo
+  (global-set-key (kbd "C-M-_") 'undo-tree-undo)
+  (global-set-key (kbd "C-_")  'undo-tree-undo)
+
 #+END_SRC
 
 ** Super-Special Personal Keybindings
@@ -908,6 +917,40 @@ I should figure out.
       (global-set-key (kbd "M--") 'cnd/decrease-font-size))
     
 #+END_SRC
+
+** Additional OS X stuff from emacs-live
+
+  Ensure copy/paste works (not sure this is necessary anymore.
+  System-name work-around
+  Ignore .DS_Store in ido
+  
+#+BEGIN_SRC emacs-lisp
+
+  (setq default-input-method "MacOSX")
+
+  ;; Make cut and paste work with the OS X clipboard
+  (defun live-copy-from-osx ()
+    (shell-command-to-string "pbpaste"))
+
+  (defun live-paste-to-osx (text &optional push)
+    (let ((process-connection-type nil))
+      (let ((proc (start-process "pbcopy" "*Messages*" "pbcopy")))
+        (process-send-string proc text)
+        (process-send-eof proc))))
+
+   (when (not window-system)
+     (setq interprogram-cut-function 'live-paste-to-osx)
+     (setq interprogram-paste-function 'live-copy-from-osx))
+
+  ;; Work around a bug on OS X where system-name is a fully qualified
+  ;; domain name
+  (setq system-name (car (split-string system-name "\\.")))
+
+  ;; Ignore .DS_Store files with ido mode
+  (add-to-list 'ido-ignore-files "\\.DS_Store")
+
+#+END_SRC
+
 * Local Configuration
   No matter how universal your configuration is, you will find
   yourself someday needing to configuration something different for a
