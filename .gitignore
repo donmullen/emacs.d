@@ -7,9 +7,11 @@ url
 local.el
 anything-c-*
 eshell
+recentf
 swank
 session.*
 ac-comphist.dat
 start.el
+tmp
 _site
 .mc-lists.el

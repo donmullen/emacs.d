@@ -181,6 +181,7 @@
                          ag
                          auto-complete
                          ;; autopair
+                         cider
                          clojure-mode
                          coffee-mode
                          cperl-mode
@@ -190,6 +191,7 @@
                          flymake
                          flymake-cursor
                          flymake-python-pyflakes
+                         god-mode
                          gist
                          haml-mode
                          htmlize
@@ -201,7 +203,6 @@
                          marmalade
                          multiple-cursors
                          mustache-mode
-                         nrepl
                          org
                          phoenix-dark-mono-theme
                          phoenix-dark-pink-theme
@@ -329,6 +330,10 @@ I want to be able to use [[http://ditaa.sourceforge.net/][ditaa]] and Clojure in
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((ditaa . t)))
+
+  ;; I like underlined semi-bold links
+  (custom-set-faces
+     '(org-link ((t (:inherit link :underline t :weight semi-bold)))))
   
   (require 'ob-clojure)
   
@@ -355,6 +360,16 @@ I want to be able to use [[http://ditaa.sourceforge.net/][ditaa]] and Clojure in
                   :value))))
 #+END_SRC
 
+** God-mode
+#+BEGIN_SRC emacs-lisp
+  (global-set-key (kbd "<escape>") 'god-local-mode)
+  (defun my-update-cursor ()
+    (setq cursor-type (if (or god-local-mode buffer-read-only)
+                          'box
+                          'bar)))
+  (add-hook 'god-mode-enabled-hook 'my-update-cursor)
+  (add-hook 'god-mode-disabled-hook 'my-update-cursor)
+#+END_SRC
 ** Undo-tree
 #+BEGIN_SRC emacs-lisp
   (global-undo-tree-mode)
@@ -362,12 +377,14 @@ I want to be able to use [[http://ditaa.sourceforge.net/][ditaa]] and Clojure in
 ** SmartParens
 
 From :  https://github.com/ronert/.emacs.d/blob/master/init-smartparens.el
-Option to look at : author's default configuration :  https://github.com/Fuco1/smartparens/wiki/Example-configuration
+And from author's default configuration :  https://github.com/Fuco1/smartparens/wiki/Example-configuration
 
 #+BEGIN_SRC emacs-lisp
   
   (require 'smartparens-config)
   (smartparens-global-mode t)
+  (setq sp-autoskip-closing-pair 'always)
+  (setq sp-navigate-close-if-unbalanced t)
   
   ;; highlights matching pairs
   (show-smartparens-global-mode t)
@@ -377,6 +394,10 @@ Option to look at : author's default configuration :  https://github.com/Fuco1/s
   ;; natural language.  Nil for second argument means to keep the
   ;; original definition of closing pair.
   (sp-pair "'" nil :unless '(sp-point-after-word-p))
+
+  ;;;;;;;;;;;;;;;;;;
+  ;; Pair management
+  (sp-local-pair 'minibuffer-inactive-mode "'" nil :actions nil)
   
   ;; emacs is lisp hacking enviroment, so we set up some most common
   ;; lisp modes too
@@ -402,12 +423,12 @@ Option to look at : author's default configuration :  https://github.com/Fuco1/s
   ;; automatically.  If you want to call sp-local-pair outside this
   ;; macro, you MUST supply the major mode argument.
   
-  ;; markdown based modes
-  (sp-with-modes '(
-                   markdown-mode
-                   gfm-mode
-                   rst-mode
-                   )
+  ;;; markdown based mode
+  (sp-with-modes '(markdown-mode gfm-mode rst-mode)
+    (sp-local-pair "*" "*" :bind "C-*")
+    (sp-local-tag "2" "**" "**")
+    (sp-local-tag "s" "```scheme" "```")
+    (sp-local-tag "<"  "<_>" "</_>" :transform 'sp-match-sgml-tags)
     ;; overload the `' pair with ``, which is used for inline
     ;; code in markdown
     (sp-local-pair "`" "`"))
@@ -420,6 +441,14 @@ Option to look at : author's default configuration :  https://github.com/Fuco1/s
   
   ;; html modes
   (sp-local-tag '(sgml-mode html-mode) "<" "<_>" "</_>" :transform 'sp-match-sgml-tags)
+
+  ;;; html-mode
+  (sp-with-modes '(html-mode sgml-mode)
+    (sp-local-pair "<" ">"))
+
+  ;;; lisp modes
+  (sp-with-modes sp--lisp-modes
+    (sp-local-pair "(" nil :bind "C-("))
   
 #+END_SRC
 * GUI Settings
@@ -631,22 +660,20 @@ smart quotes. I use [[http://kevinburke.bitbucket.org/markdowncss/][markdown.css
    I want smartparens when I am editing Clojure files as well as
    rainbow delimiters.
 
-   Lastly, =nrepl= is the Emacs client for the Clojure REPL, and I
+   Lastly, =cider= is the Emacs client for the Clojure REPL, and I
    want to configure it to hide its special buffers, use eldoc, and be
    easy to switch to.
 
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.cljs$" . clojure-mode))
-  
   (add-hook 'clojure-mode-hook 'smartparens-strict-mode)
   (add-hook 'clojure-mode-hook 'rainbow-delimiters-mode)
-  (add-hook 'nrepl-repl-mode-hook 'smartparens-strict-mode)
-  (add-hook 'nrepl-mode-hook 'smartparens-strict-mode)
-  (add-hook 'nrepl-mode-hook 'rainbow-delimiters-mode)
-  
-  (add-hook 'nrepl-interaction-mode-hook 'nrepl-turn-on-eldoc-mode)
-  (setq nrepl-hide-special-buffers t)
-  (add-to-list 'same-window-buffer-names "*nrepl*")
+  (add-hook 'cider-repl-mode-hook 'paredit-mode)
+  (add-hook 'cider-repl-mode-hook 'rainbow-delimiters-mode)
+  (add-hook 'cider-repl-mode-hook 'subword-mode)
+  (add-hook 'cider-mode-hook 'cider-turn-on-eldoc-mode)
+  ;;(setq nrepl-hide-special-buffers t)
+  ;;(add-to-list 'same-window-buffer-names "*nrepl*")
 #+END_SRC
 
 ** CSS/SCSS
@@ -811,8 +838,8 @@ I should figure out.
   (global-set-key (kbd "RET") 'newline-and-indent)
   (global-set-key (kbd "C-;") 'comment-or-uncomment-region)
   (global-set-key (kbd "M-/") 'hippie-expand)
-  (global-set-key (kbd "M-x") 'smex)
-  (global-set-key (kbd "M-X") 'smex-major-mode-commands)
+  (global-set-key (kbd "M-X") 'smex)
+  (global-set-key (kbd "C-M-S-x") 'smex-major-mode-commands)
   (if window-system (global-unset-key (kbd "C-z")))
 
   (global-set-key (kbd "C-+") 'cnd/increase-font-size)
@@ -822,9 +849,17 @@ I should figure out.
   ;; undo
   (global-set-key (kbd "C-M-_") 'undo-tree-undo)
   (global-set-key (kbd "C-_")  'undo-tree-undo)
-
 #+END_SRC
 
+** Mac OS X bindings
+#+BEGIN_SRC emacs-lisp
+  (global-set-key (kbd "M-z")  'undo-tree-undo)
+  (global-set-key (kbd "M-x")  'kill-region)
+  (global-set-key (kbd "M-c")  'kill-ring-save)
+  (global-set-key (kbd "M-v")  'yank)
+  (global-set-key (kbd "M-m")  'iconify-frame)
+  (global-set-key (kbd "M-M")  'back-to-indentation)
+#+END_SRC
 ** Super-Special Personal Keybindings
 
 #+BEGIN_SRC emacs-lisp
@@ -844,8 +879,8 @@ I should figure out.
   (global-set-key (kbd "C-c w") 'whitespace-mode)
   (global-set-key (kbd "C-c x") 'execute-extended-command)
   (global-set-key (kbd "C-c z") 'zap-to-char)
-  (global-set-key (kbd "M-Z") 'zap-to-char)
-  (global-set-key (kbd "M-z") 'zap-up-to-char)
+  (global-set-key (kbd "M-Z") 'zap-up-to-char)
+  ;;(global-set-key (kbd "M-z") 'zap-up-to-char)
   (global-set-key (kbd "<C-S-down>") 'cnd/move-line-down)
   (global-set-key (kbd "<C-S-up>") 'cnd/move-line-up)
   (global-set-key (kbd "<C-return>") 'cnd/open-line-below)
@@ -869,6 +904,112 @@ I should figure out.
   (global-set-key (kbd "C-c <right>") 'windmove-right)
   (global-set-key (kbd "C-c <up>")    'windmove-up)
   (global-set-key (kbd "C-c <down>")  'windmove-down)
+#+END_SRC
+** SmartParens
+#+BEGIN_SRC emacs-lisp
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; keybinding management from SmartParens Author
+  
+  (define-key sp-keymap (kbd "C-M-f") 'sp-forward-sexp)
+  (define-key sp-keymap (kbd "C-M-b") 'sp-backward-sexp)
+  
+  (define-key sp-keymap (kbd "C-M-d") 'sp-down-sexp)
+  (define-key sp-keymap (kbd "C-M-a") 'sp-backward-down-sexp)
+  (define-key sp-keymap (kbd "C-S-a") 'sp-beginning-of-sexp)
+  (define-key sp-keymap (kbd "C-S-d") 'sp-end-of-sexp)
+  
+  (define-key sp-keymap (kbd "C-M-e") 'sp-up-sexp)
+  (define-key emacs-lisp-mode-map (kbd ")") 'sp-up-sexp)
+  (define-key sp-keymap (kbd "C-M-u") 'sp-backward-up-sexp)
+  (define-key sp-keymap (kbd "C-M-t") 'sp-transpose-sexp)
+  
+  (define-key sp-keymap (kbd "C-M-n") 'sp-next-sexp)
+  (define-key sp-keymap (kbd "C-M-p") 'sp-previous-sexp)
+  
+  (define-key sp-keymap (kbd "C-M-k") 'sp-kill-sexp)
+  (define-key sp-keymap (kbd "C-M-w") 'sp-copy-sexp)
+  
+  (define-key sp-keymap (kbd "M-<delete>") 'sp-unwrap-sexp)
+  (define-key sp-keymap (kbd "M-<backspace>") 'sp-backward-unwrap-sexp)
+  
+  (define-key sp-keymap (kbd "C-<right>") 'sp-forward-slurp-sexp)
+  (define-key sp-keymap (kbd "C-<left>") 'sp-forward-barf-sexp)
+  (define-key sp-keymap (kbd "C-M-<left>") 'sp-backward-slurp-sexp)
+  (define-key sp-keymap (kbd "C-M-<right>") 'sp-backward-barf-sexp)
+  
+  (define-key sp-keymap (kbd "M-D") 'sp-splice-sexp)
+  (define-key sp-keymap (kbd "C-M-<delete>") 'sp-splice-sexp-killing-forward)
+  (define-key sp-keymap (kbd "C-M-<backspace>") 'sp-splice-sexp-killing-backward)
+  (define-key sp-keymap (kbd "C-S-<backspace>") 'sp-splice-sexp-killing-around)
+  
+  (define-key sp-keymap (kbd "C-]") 'sp-select-next-thing-exchange)
+  (define-key sp-keymap (kbd "C-<left_bracket>") 'sp-select-previous-thing)
+  (define-key sp-keymap (kbd "C-M-]") 'sp-select-next-thing)
+  
+  (define-key sp-keymap (kbd "M-F") 'sp-forward-symbol)
+  (define-key sp-keymap (kbd "M-B") 'sp-backward-symbol)
+  
+  (define-key sp-keymap (kbd "H-t") 'sp-prefix-tag-object)
+  (define-key sp-keymap (kbd "H-p") 'sp-prefix-pair-object)
+  (define-key sp-keymap (kbd "H-s c") 'sp-convolute-sexp)
+  (define-key sp-keymap (kbd "H-s a") 'sp-absorb-sexp)
+  (define-key sp-keymap (kbd "H-s e") 'sp-emit-sexp)
+  (define-key sp-keymap (kbd "H-s p") 'sp-add-to-previous-sexp)
+  (define-key sp-keymap (kbd "H-s n") 'sp-add-to-next-sexp)
+  (define-key sp-keymap (kbd "H-s j") 'sp-join-sexp)
+  (define-key sp-keymap (kbd "H-s s") 'sp-split-sexp)
+  
+  ;; keybindings with M-s prefix
+  
+    (define-key sp-keymap (kbd "M-s f") 'sp-forward-sexp)
+    (define-key sp-keymap (kbd "M-s b") 'sp-backward-sexp)
+  
+    (define-key sp-keymap (kbd "M-s d") 'sp-down-sexp)
+    (define-key sp-keymap (kbd "M-s D") 'sp-backward-down-sexp)
+    (define-key sp-keymap (kbd "M-s a") 'sp-beginning-of-sexp)
+    (define-key sp-keymap (kbd "M-s e") 'sp-end-of-sexp)
+  
+    (define-key sp-keymap (kbd "M-s u") 'sp-up-sexp)
+    ;; (define-key emacs-lisp-mode-map (kbd ")") 'sp-up-sexp)
+    (define-key sp-keymap (kbd "M-s U") 'sp-backward-up-sexp)
+    (define-key sp-keymap (kbd "M-s t") 'sp-transpose-sexp)
+  
+    (define-key sp-keymap (kbd "M-s n") 'sp-next-sexp)
+    (define-key sp-keymap (kbd "M-s p") 'sp-previous-sexp)
+  
+    (define-key sp-keymap (kbd "M-s k") 'sp-kill-sexp)
+    (define-key sp-keymap (kbd "M-s w") 'sp-copy-sexp)
+  
+    (define-key sp-keymap (kbd "M-s s") 'sp-forward-slurp-sexp)
+    (define-key sp-keymap (kbd "M-s r") 'sp-forward-barf-sexp)
+    (define-key sp-keymap (kbd "M-s S") 'sp-backward-slurp-sexp)
+    (define-key sp-keymap (kbd "M-s R") 'sp-backward-barf-sexp)
+    (define-key sp-keymap (kbd "M-s F") 'sp-forward-symbol)
+    (define-key sp-keymap (kbd "M-s B") 'sp-backward-symbol)
+  
+    (define-key sp-keymap (kbd "M-s [") 'sp-select-previous-thing)
+    (define-key sp-keymap (kbd "M-s ]") 'sp-select-next-thing)
+  
+    (define-key sp-keymap (kbd "M-s M-i") 'sp-splice-sexp)
+    (define-key sp-keymap (kbd "M-s <delete>") 'sp-splice-sexp-killing-forward)
+    (define-key sp-keymap (kbd "M-s <backspace>") 'sp-splice-sexp-killing-backward)
+    (define-key sp-keymap (kbd "M-s M-<backspace>") 'sp-splice-sexp-killing-around)
+  
+    (define-key sp-keymap (kbd "M-s M-d") 'sp-unwrap-sexp)
+    (define-key sp-keymap (kbd "M-s M-b") 'sp-backward-unwrap-sexp)
+  
+    (define-key sp-keymap (kbd "M-s M-t") 'sp-prefix-tag-object)
+    (define-key sp-keymap (kbd "M-s M-p") 'sp-prefix-pair-object)
+    (define-key sp-keymap (kbd "M-s M-c") 'sp-convolute-sexp)
+    (define-key sp-keymap (kbd "M-s M-a") 'sp-absorb-sexp)
+    (define-key sp-keymap (kbd "M-s M-e") 'sp-emit-sexp)
+    (define-key sp-keymap (kbd "M-s M-p") 'sp-add-to-previous-sexp)
+    (define-key sp-keymap (kbd "M-s M-n") 'sp-add-to-next-sexp)
+    (define-key sp-keymap (kbd "M-s M-j") 'sp-join-sexp)
+    (define-key sp-keymap (kbd "M-s M-s") 'sp-split-sexp)
+    (define-key sp-keymap (kbd "M-s M-r") 'sp-raise-sexp)
+  
 #+END_SRC
 * Emacs Server
   It is very annoying to find that you cannot close a buffer that has
