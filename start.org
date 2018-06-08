@@ -3,6 +3,11 @@
 #+EMAIL:  donmullen@gmail.com
 #+OPTIONS: toc:2 num:nil
 
+* TODO
+- markdown-css-path is deprecated, see markdown-css-paths
+* Possible Additions
+- clojure-refactor
+
 * Introduction
 ** Standards
    Emacs does not have namespaces, so you should come up with some
@@ -28,6 +33,7 @@
 #+END_SRC
 
 * Must-Have Configuration
+
   There are a few settings that any user of Emacs should have. You do
   want the power of =cl=, which brings in a lot of Common Lisp's
   methods.  You do want Emacs to reload changed files if you haven't
@@ -38,6 +44,7 @@
   (require 'cl)
   (global-auto-revert-mode t)
   (winner-mode t)
+
 #+END_SRC
 
 * Functions
@@ -163,12 +170,27 @@
 
   (package-initialize)
 
+;;  (add-to-list 'package-archives
+;;               '("marmalade" . "http://marmalade-repo.org/packages/"))
+;; bozhidar [2:21 AM] 
+;; here’s why you shouldn’t be using Marmalade anymore - the repo is basically dead
+;; http://malabarba.github.io/emacs-archive-tracker/
+
+;; ("gnu"       . "http://elpa.gnu.org/packages/")
+;; ("melpa"     . "http://melpa.org/packages/")
+;; ("melpa-stable" . "http://stable.melpa.org/packages/")
+
   (add-to-list 'package-archives
-               '("marmalade" . "http://marmalade-repo.org/packages/"))
+               '("melpa-stable" . "https://stable.melpa.org/packages/") t)
+;;  (add-to-list 'package-archives
+;;               '("melpa" . "http://melpa.milkbox.net/packages/") t)
   (add-to-list 'package-archives
-               '("melpa" . "http://melpa.milkbox.net/packages/") t)
+               '("org" . "http://orgmode.org/elpa/") t)
+
+  (add-to-list 'package-pinned-packages '(cider . "melpa-stable") t)
 
   (setq package-archive-enable-alist '(("melpa" deft magit autopair)))
+
 #+END_SRC
 
 ** Packages to Install
@@ -177,38 +199,39 @@
   packages I want to have installed.
 
 #+BEGIN_SRC emacs-lisp
-  (defvar cnd/packages '(adoc-mode
+  (defvar cnd/packages '(;; adoc-mode
                          ag
                          auto-complete
                          ;; autopair
                          cider
                          clojure-mode
                          coffee-mode
-                         cperl-mode
+                         ;; cperl-mode
                          deft
                          diminish
                          elisp-slime-nav
-                         flymake
-                         flymake-cursor
-                         flymake-python-pyflakes
-                         god-mode
+                         ;; flymake
+                         ;; flymake-cursor
+                         ;; flymake-python-pyflakes
+                         ;; god-mode
                          gist
-                         haml-mode
+                         ;; haml-mode
+                         ;; helm?
                          htmlize
-                         ido-ubiquitous
-                         inf-mongo
-                         jinja2-mode
+                         ;;ido-ubiquitous
+                         ;; inf-mongo
+                         ;; jinja2-mode
+                         jade-mode
                          magit
                          markdown-mode
                          marmalade
                          multiple-cursors
-                         mustache-mode
+                         ;; mustache-mode
                          org
                          phoenix-dark-mono-theme
                          phoenix-dark-pink-theme
-                         pony-mode
-                         projectile
-                         python-mode
+                         ;; projectile ;; code project management
+                         ;; python-mode
                          qsimpleq-theme
                          rainbow-delimiters
                          sass-mode
@@ -240,6 +263,11 @@
         (package-install pkg))))
 #+END_SRC
 * Package Configuration
+** Ag
+Turn on highlight support for Ag. (Silver Searcher)
+#+begin_src emacs-lisp
+   (setq ag-highlight-search t)
+#+end_src
 ** Deft
    http://jblevins.org/projects/deft/
 
@@ -279,9 +307,10 @@
 
 #+BEGIN_SRC emacs-lisp
   (ido-mode t)
-  (ido-ubiquitous t)
+  ;;(ido-ubiquitous t)
   (setq ido-enable-flex-matching t
-        ido-use-virtual-buffers t)
+        ido-use-virtual-buffers t
+        ido-everywhere t)
 #+END_SRC
 ** Ack
    =ack= is an enhanced grep.
@@ -362,13 +391,13 @@ I want to be able to use [[http://ditaa.sourceforge.net/][ditaa]] and Clojure in
 
 ** God-mode
 #+BEGIN_SRC emacs-lisp
-  (global-set-key (kbd "<escape>") 'god-local-mode)
-  (defun my-update-cursor ()
-    (setq cursor-type (if (or god-local-mode buffer-read-only)
-                          'box
-                          'bar)))
-  (add-hook 'god-mode-enabled-hook 'my-update-cursor)
-  (add-hook 'god-mode-disabled-hook 'my-update-cursor)
+;;  (global-set-key (kbd "<escape>") 'god-local-mode)
+;;  (defun my-update-cursor ()
+;;    (setq cursor-type (if (or god-local-mode buffer-read-only)
+;;                          'box
+;;                          'bar)))
+;;  (add-hook 'god-mode-enabled-hook 'my-update-cursor)
+;;  (add-hook 'god-mode-disabled-hook 'my-update-cursor)
 #+END_SRC
 ** Undo-tree
 #+BEGIN_SRC emacs-lisp
@@ -633,8 +662,8 @@ command to use when exporting from =markdown-mode=. I want to enable
 smart quotes. I use [[http://kevinburke.bitbucket.org/markdowncss/][markdown.css]] to beautify the output.
 
 #+BEGIN_SRC emacs-lisp
-  (setq markdown-command "pandoc --smart -f markdown -t html")
-  (setq markdown-css-path (expand-file-name "markdown.css" cnd/vendor-dir))
+  ;; (setq markdown-command "pandoc --smart -f markdown -t html")
+  ;; (setq markdown-css-path (expand-file-name "markdown.css" cnd/vendor-dir))
 #+END_SRC
 
 * Programming
@@ -655,7 +684,7 @@ smart quotes. I use [[http://kevinburke.bitbucket.org/markdowncss/][markdown.css
 #+end_src
 
 ** Clojure
-   I want Emacs to open up ClojureScript files with Clojure syntax.
+   I want Emacs to open up ClojureScript and Hoplon files with Clojure syntax.
 
    I want smartparens when I am editing Clojure files as well as
    rainbow delimiters.
@@ -666,14 +695,27 @@ smart quotes. I use [[http://kevinburke.bitbucket.org/markdowncss/][markdown.css
 
 #+BEGIN_SRC emacs-lisp
   (add-to-list 'auto-mode-alist '("\\.cljs$" . clojure-mode))
+  (add-to-list 'auto-mode-alist '("\\.cljs.hl$" . clojure-mode))
+  (add-to-list 'auto-mode-alist '("\\.boot$\\'" . clojure-mode))
   (add-hook 'clojure-mode-hook 'smartparens-strict-mode)
   (add-hook 'clojure-mode-hook 'rainbow-delimiters-mode)
-  (add-hook 'cider-repl-mode-hook 'paredit-mode)
+  (add-hook 'cider-repl-mode-hook 'smartparens-strict-mode)
   (add-hook 'cider-repl-mode-hook 'rainbow-delimiters-mode)
   (add-hook 'cider-repl-mode-hook 'subword-mode)
-  (add-hook 'cider-mode-hook 'cider-turn-on-eldoc-mode)
-  ;;(setq nrepl-hide-special-buffers t)
+  ;;(add-hook 'cider-repl-mode-hook 'cider-turn-on-eldoc-mode)
+  (setq nrepl-hide-special-buffers t)
   ;;(add-to-list 'same-window-buffer-names "*nrepl*")
+  ;;(setq clojure-defun-style-default-indent t)
+  (setq clojure-indent-style :always-indent)
+  (require 'clojure-mode)
+  (define-clojure-indent  (action :defn) (dom/a :defn) (dom/abbr :defn) (dom/address :defn) (dom/area :defn) (dom/article :defn) (dom/aside :defn) (dom/audio :defn) (dom/b :defn) (dom/base :defn) (dom/bdi :defn) (dom/bdo :defn) (dom/big :defn) (dom/blockquote :defn) (dom/body :defn) (dom/br :defn) (dom/button :defn) (dom/canvas :defn) (dom/caption :defn) (dom/cite :defn) (dom/code :defn) (dom/col :defn) (dom/colgroup :defn) (dom/data :defn) (dom/datalist :defn) (dom/dd :defn) (dom/del :defn) (dom/details :defn) (dom/dfn :defn) (dom/dialog :defn) (dom/dl :defn) (dom/dt :defn) (dom/em :defn) (dom/embed :defn) (dom/fieldset :defn) (dom/figcaption :defn) (dom/figure :defn) (dom/footer :defn) (dom/form :defn) (dom/h1 :defn) (dom/h2 :defn) (dom/h3 :defn) (dom/h4 :defn) (dom/h5 :defn) (dom/h6 :defn) (dom/head :defn) (dom/header :defn) (dom/hr :defn) (dom/html :defn) (dom/i :defn) (dom/iframe :defn) (dom/img :defn) (dom/ins :defn) (dom/kbd :defn) (dom/keygen :defn) (dom/label :defn) (dom/legend :defn) (dom/li :defn) (dom/link :defn) (dom/main :defn) (dom/map :defn) (dom/mark :defn) (dom/menu :defn) (dom/menuitem :defn) (dom/meta :defn) (dom/meter :defn) (dom/nav :defn) (dom/noscript :defn) (dom/object :defn) (dom/ol :defn) (dom/optgroup :defn) (dom/output :defn) (dom/p :defn) (dom/param :defn) (dom/picture :defn) (dom/pre :defn) (dom/progress :defn) (dom/q :defn) (dom/rp :defn) (dom/rt :defn) (dom/ruby :defn) (dom/s :defn) (dom/samp :defn) (dom/script :defn) (dom/section :defn) (dom/small :defn) (dom/source :defn) (dom/span :defn) (dom/strong :defn) (dom/style :defn) (dom/sub :defn) (dom/summary :defn) (dom/sup :defn) (dom/table :defn) (dom/tbody :defn) (dom/td :defn) (dom/tfoot :defn) (dom/th :defn) (dom/thead :defn) (dom/time :defn) (dom/title :defn) (dom/tr :defn) (dom/track :defn) (dom/u :defn) (dom/ul :defn) (dom/var :defn) (dom/video :defn) (dom/wbr :defn) (dom/div :defn) (testing '(:defn (1))) (specification '(:defn (1))) (behaviour '(:defn (1))) (defui '(:defn (1))) (defsc '(:defn (1)))) 
+  (setq lisp-indent-offset 2)
+  (setq cider-repl-popup-stacktraces t)
+  (setq cider-auto-select-error-buffer t)
+  (setq cider-stacktrace-fill-column 100)
+  (setq cider-repl-print-length 100)
+  (setq cider-repl-result-prefix ";; => ")
+    
 #+END_SRC
 
 ** CSS/SCSS
@@ -710,9 +752,9 @@ I have customized pychecker to run my own version, which runs
 autopep8, pyflakes, and pep8.
 
 #+begin_src emacs-lisp
-  (setq py-pychecker-command "~/.emacs.d/vendor/pychecker"
-        py-pychecker-command-args '("")
-        python-check-command "~/.emacs.d/vendor/pychecker")
+;;  (setq py-pychecker-command "~/.emacs.d/vendor/pychecker"
+;;        py-pychecker-command-args '("")
+;;        python-check-command "~/.emacs.d/vendor/pychecker")
 #+end_src
 
 *** Django
@@ -723,9 +765,8 @@ get =pony-tpl-mode= (a minor mode for Django templates) working, which
 I should figure out.
 
 #+begin_src emacs-lisp
-  ;; TODO autoload this instead of using require
-
-  (require 'pony-mode)
+;; TODO autoload this instead of using require
+;;  (require 'pony-mode)
 #+end_src
 
 ** Ruby
@@ -753,7 +794,6 @@ I should figure out.
 #+END_SRC
    
 ** Scheme
-
 #+BEGIN_SRC emacs-lisp
   (add-hook 'scheme-mode-hook 'smartparens-strict-mode)
   (add-hook 'scheme-mode-hook 'rainbow-delimiters-mode)
@@ -1025,6 +1065,19 @@ I should figure out.
                 (local-set-key (kbd "C-x k") 'server-edit))))
 #+END_SRC
 * OS-Specific Settings
+** OS X Full Screen
+
+  Add full screen toggle support - should work in most Mac versions of Emacs.
+
+#+BEGIN_SRC emacs-lisp
+(defun toggle-fullscreen ()
+  "Toggle full screen"
+  (interactive)
+  (set-frame-parameter
+     nil 'fullscreen
+     (when (not (frame-parameter nil 'fullscreen)) 'fullboth)))
+#+END_SRC
+
 ** OS X
    Emacs works pretty great on OS X, but there are a few adjustments I
    like. =mdfind= is a command-line interface to Spotlight which works
@@ -1035,27 +1088,45 @@ I should figure out.
    =.profile= (or wherever you set up your environment variables.)
    Therefore, I set it explicitly.
 
+Switched from Ubuntu Mono derivative Powerline to Anonymous Pro
+
 #+BEGIN_SRC emacs-lisp
     (when (eq system-type 'darwin)
       (setq locate-command "mdfind")
       (setq ispell-program-name "aspell")
       
+      ;;;(defun set-exec-path-from-shell-PATH ()
+      ;;;  (let ((path-from-shell (shell-command-to-string "$SHELL -i -c 'echo $PATH'")))
+      ;;;    (setenv "PATH" path-from-shell)
+      ;;;    (setq exec-path (split-string path-from-shell path-separator))))
+
       (defun set-exec-path-from-shell-PATH ()
-        (let ((path-from-shell (shell-command-to-string "$SHELL -i -c 'echo $PATH'")))
+       "Set up Emacs' `exec-path' and PATH environment variable to match that used by the user's shell.
+        This is particularly useful under Mac OSX, where GUI apps are not started from a shell."
+        (interactive)
+        (let ((path-from-shell (replace-regexp-in-string "[ \t\n]*$" "" (shell-command-to-string "$SHELL --login -i -c 'echo $PATH'"))))
           (setenv "PATH" path-from-shell)
           (setq exec-path (split-string path-from-shell path-separator))))
   
       (when window-system (set-exec-path-from-shell-PATH))
   
+      ;;; (set-face-attribute 'default nil
+      ;;;              :family "Anonymous Pro" :height 180 :weight 'normal)
+
+      ;;; http://sourcefoundry.org/hack/
+
+      ;;; http://www.fontsquirrel.com/fonts/fira-mono
       (set-face-attribute 'default nil
-                    :family "Ubuntu Mono" :height 180 :weight 'normal)
+                    :family "Fira Mono" :height 180 :weight 'normal)
+
       (setq mac-option-key-is-meta t)
       (setq mac-command-key-is-meta t)
       (setq mac-command-modifier 'meta)
       (setq mac-option-modifier 'meta)
       (global-set-key (kbd "M-+") 'cnd/increase-font-size)
       (global-set-key (kbd "M-=") 'cnd/increase-font-size)
-      (global-set-key (kbd "M--") 'cnd/decrease-font-size))
+      (global-set-key (kbd "M--") 'cnd/decrease-font-size)
+      (global-set-key (kbd "C-<f11>") 'toggle-fullscreen))
     
 #+END_SRC
 
@@ -1102,4 +1173,21 @@ I should figure out.
   (let ((local-config (expand-file-name "local.el" user-emacs-directory)))
     (when (file-exists-p local-config)
       (load local-config)))
+
+  (defun dos2unix ()
+      "Not exactly but it's easier to remember"
+      (interactive)
+        (set-buffer-file-coding-system 'unix 't)
+        (goto-char (point-min))
+          (while (search-forward "\r" nil t) (replace-match "")))
+
+  (defun dos2unixLE ()
+    "Replace DOS eolns CR LF with Unix eolns CR"
+    (interactive)
+      (goto-char (point-min))
+        (while (search-forward "\r" nil t) (replace-match "")))
 #+END_SRC
+* Possibly Add:
+- Highlight Indentation (good for jade/haml)
+  - https://github.com/antonj/Highlight-Indentation-for-Emacs/blob/master/highlight-indentation.el
+  - melpa : highlight-indentation
