@@ -1,10 +1,12 @@
 *~
 backup
 elpa
+var
 .smex-items
 places
 url
 local.el
+ido.last
 anything-c-*
 eshell
 recentf
